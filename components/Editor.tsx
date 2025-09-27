@@ -11,6 +11,7 @@ interface EditorProps {
   onDeleteItem: (id: string) => void;
   onIndent: (id: string) => void;
   onOutdent: (id: string) => void;
+  onNavigateFocus: (id: string, direction: 'up' | 'down') => void;
   itemToFocusId: string | null;
   onFocusHandled: () => void;
 }
@@ -22,6 +23,7 @@ const Editor: React.FC<EditorProps> = ({
     onDeleteItem,
     onIndent,
     onOutdent,
+    onNavigateFocus,
     itemToFocusId,
     onFocusHandled
 }) => {
@@ -38,6 +40,7 @@ const Editor: React.FC<EditorProps> = ({
             onDeleteItem={onDeleteItem}
             onIndent={onIndent}
             onOutdent={onOutdent}
+            onNavigateFocus={onNavigateFocus}
             isFirst={index === 0}
             isLast={index === nodes.length - 1}
             parentIsRoot={true}

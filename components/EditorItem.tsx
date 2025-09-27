@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { ListItemNode } from '../types';
-import { PlusIcon, TrashIcon, ArrowRightIcon, ArrowLeftIcon } from './icons';
+import { TrashIcon, ArrowRightIcon, ArrowLeftIcon } from './icons';
 
 interface EditorItemProps {
   node: ListItemNode;
@@ -11,6 +11,7 @@ interface EditorItemProps {
   onDeleteItem: (id: string) => void;
   onIndent: (id: string) => void;
   onOutdent: (id: string) => void;
+  onNavigateFocus: (id: string, direction: 'up' | 'down') => void;
   isFirst: boolean;
   isLast: boolean;
   parentIsRoot: boolean;
@@ -26,6 +27,7 @@ const EditorItem: React.FC<EditorItemProps> = ({
   onDeleteItem,
   onIndent,
   onOutdent,
+  onNavigateFocus,
   isFirst,
   isLast,
   parentIsRoot,
@@ -53,43 +55,41 @@ const EditorItem: React.FC<EditorItemProps> = ({
       } else {
         onIndent(node.id);
       }
-    } else if (e.key === 'Backspace' && node.text === '') {
+    } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        onDeleteItem(node.id);
+        onNavigateFocus(node.id, 'up');
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        onNavigateFocus(node.id, 'down');
     }
   };
 
   return (
     <div className="flex flex-col">
-      <div className="group flex items-center space-x-2 py-1">
-        <span className="text-xl font-bold text-slate-400 dark:text-slate-600 w-8 text-right">
-          {'#'.repeat(level)}
-        </span>
+      <div className="flex items-center group space-x-2 py-1">
         <input
           ref={inputRef}
           type="text"
           value={node.text}
           onChange={(e) => onUpdateText(node.id, e.target.value)}
           onKeyDown={handleKeyDown}
+          className="flex-grow bg-transparent focus:outline-none focus:bg-slate-200 dark:focus:bg-slate-700 rounded-md px-2 py-1"
           placeholder="Type here..."
-          className="flex-grow bg-transparent focus:outline-none text-slate-800 dark:text-slate-200 text-lg py-1"
         />
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-          <button onClick={() => onAddItem(node.id)} className="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400">
-            <PlusIcon className="w-5 h-5" />
-          </button>
-          <button onClick={() => onIndent(node.id)} disabled={isFirst} className="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed">
-            <ArrowRightIcon className="w-5 h-5" />
-          </button>
-          <button onClick={() => onOutdent(node.id)} disabled={parentIsRoot} className="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed">
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <button onClick={() => onDeleteItem(node.id)} className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500">
-            <TrashIcon className="w-5 h-5" />
-          </button>
+        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <button onClick={() => onIndent(node.id)} title="Indent (Tab)" className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-20 disabled:cursor-not-allowed" disabled={isFirst && parentIsRoot}>
+                <ArrowRightIcon className="w-4 h-4 text-slate-500" />
+            </button>
+            <button onClick={() => onOutdent(node.id)} title="Outdent (Shift+Tab)" className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-20 disabled:cursor-not-allowed" disabled={parentIsRoot}>
+                <ArrowLeftIcon className="w-4 h-4 text-slate-500" />
+            </button>
+            <button onClick={() => onDeleteItem(node.id)} title="Delete item" className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">
+                <TrashIcon className="w-4 h-4 text-red-500" />
+            </button>
         </div>
       </div>
-      <div style={{ paddingLeft: `${level * 1.5}rem` }}>
+      <div style={{ paddingLeft: `1.5rem` }} className="relative">
+        {node.children.length > 0 && <div className="absolute left-0 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700 ml-3"></div>}
         {node.children.map((childNode, index) => (
           <EditorItem
             key={childNode.id}
@@ -100,6 +100,7 @@ const EditorItem: React.FC<EditorItemProps> = ({
             onDeleteItem={onDeleteItem}
             onIndent={onIndent}
             onOutdent={onOutdent}
+            onNavigateFocus={onNavigateFocus}
             isFirst={index === 0}
             isLast={index === node.children.length - 1}
             parentIsRoot={false}

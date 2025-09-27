@@ -27,6 +27,17 @@ const findAndModifyNode = <T, >(nodes: ListItemNode[], targetId: string, callbac
 
 const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+const flattenNodesForNavigation = (nodes: ListItemNode[]): string[] => {
+  let ids: string[] = [];
+  for (const node of nodes) {
+    ids.push(node.id);
+    if (node.children.length > 0) {
+      ids = ids.concat(flattenNodesForNavigation(node.children));
+    }
+  }
+  return ids;
+};
+
 export default function App() {
   const [docContent, setDocContent] = useState<ListItemNode[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -246,6 +257,7 @@ export default function App() {
       }
     });
     setDocContent(newDoc);
+    setItemToFocusId(id);
   };
   
   const onOutdent = (id: string) => {
@@ -255,14 +267,31 @@ export default function App() {
         findAndModifyNode(newDoc, parent.id, (greatGrandParent, grandParent, parentSiblings, parentIndex) => {
           const itemToMove = siblings.splice(index, 1)[0];
           parentSiblings.splice(parentIndex + 1, 0, itemToMove);
+          // also move children of the moved item
+          const childrenToMove = siblings.splice(index);
+          itemToMove.children.push(...childrenToMove);
         });
       }
     });
     setDocContent(newDoc);
+    setItemToFocusId(id);
   };
 
   const onFocusHandled = () => {
     setItemToFocusId(null);
+  };
+
+  const flattenedIds = useMemo(() => flattenNodesForNavigation(docContent), [docContent]);
+
+  const onNavigateFocus = (currentId: string, direction: 'up' | 'down') => {
+    const currentIndex = flattenedIds.indexOf(currentId);
+    if (currentIndex === -1) return;
+
+    const nextIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+    if (nextIndex >= 0 && nextIndex < flattenedIds.length) {
+      setItemToFocusId(flattenedIds[nextIndex]);
+    }
   };
 
   if (configError) {
@@ -351,6 +380,7 @@ export default function App() {
               onDeleteItem={onDeleteItem}
               onIndent={onIndent}
               onOutdent={onOutdent}
+              onNavigateFocus={onNavigateFocus}
               itemToFocusId={itemToFocusId}
               onFocusHandled={onFocusHandled}
             />
