@@ -1,0 +1,5 @@
+{
+  "name": "Hierarchical Markdown Editor",
+  "description": "An application to edit text documents as hierarchical, unnumbered lists. Documents are saved to Google Drive in a special markdown format where list levels are denoted by '#', '##', etc.",
+  "requestFramePermissions": []
+}
