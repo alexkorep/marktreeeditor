@@ -334,6 +334,18 @@ export default function App() {
     return () => clearTimeout(timeoutId);
   }, [currentFile, docContent, saveFile, user]);
 
+  useEffect(() => {
+    if (!currentFile || !user?.uid) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      void saveFile();
+    }, 10000);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentFile, docContent, saveFile, user]);
+
   const deleteFile = async (file: AppFile) => {
     if (!window.confirm(`Are you sure you want to delete "${file.name}"? This action cannot be undone.`)) {
       return;
