@@ -1,8 +1,9 @@
 
-import { AppFile } from '../types';
+import { AppFile, DocumentViewState } from '../types';
 
 const FILE_INDEX_KEY = 'marktree_local_files_index';
 const FILE_CONTENT_PREFIX = 'marktree_local_file_';
+const FILE_VIEWSTATE_PREFIX = 'marktree_local_viewstate_';
 
 const generateId = () => `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -57,6 +58,26 @@ export const deleteDocument = async (docId: string): Promise<void> => {
   index = index.filter(file => file.id !== docId);
   setFileIndex(index);
   localStorage.removeItem(`${FILE_CONTENT_PREFIX}${docId}`);
+  localStorage.removeItem(`${FILE_VIEWSTATE_PREFIX}${docId}`);
+  return Promise.resolve();
+};
+
+export const getDocumentViewState = async (docId: string): Promise<DocumentViewState | null> => {
+  const stored = localStorage.getItem(`${FILE_VIEWSTATE_PREFIX}${docId}`);
+  if (!stored) {
+    return Promise.resolve(null);
+  }
+
+  try {
+    return Promise.resolve(JSON.parse(stored));
+  } catch (error) {
+    console.error('Failed to parse document view state', error);
+    return Promise.resolve(null);
+  }
+};
+
+export const updateDocumentViewState = async (docId: string, state: DocumentViewState): Promise<void> => {
+  localStorage.setItem(`${FILE_VIEWSTATE_PREFIX}${docId}`, JSON.stringify(state));
   return Promise.resolve();
 };
 

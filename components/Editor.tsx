@@ -12,18 +12,20 @@ interface EditorProps {
   onIndent: (id: string) => void;
   onOutdent: (id: string) => void;
   onNavigateFocus: (id: string, direction: 'up' | 'down') => void;
+  onToggleCollapse: (id: string) => void;
   itemToFocusId: string | null;
   onFocusHandled: () => void;
 }
 
-const Editor: React.FC<EditorProps> = ({ 
-    nodes, 
-    onUpdateText, 
-    onAddItem, 
+const Editor: React.FC<EditorProps> = ({
+    nodes,
+    onUpdateText,
+    onAddItem,
     onDeleteItem,
     onIndent,
     onOutdent,
     onNavigateFocus,
+    onToggleCollapse,
     itemToFocusId,
     onFocusHandled
 }) => {
@@ -41,6 +43,7 @@ const Editor: React.FC<EditorProps> = ({
             onIndent={onIndent}
             onOutdent={onOutdent}
             onNavigateFocus={onNavigateFocus}
+            onToggleCollapse={onToggleCollapse}
             isFirst={index === 0}
             isLast={index === nodes.length - 1}
             parentIsRoot={true}

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ListItemNode, AppFile, UserProfile } from './types';
+import { ListItemNode, AppFile, UserProfile, DocumentViewState } from './types';
 import Editor from './components/Editor';
 import MarkdownDialog from './components/MarkdownDialog';
 import { parseMarkdown, serializeToMarkdown } from './services/markdownParser';
@@ -32,11 +32,47 @@ const flattenNodesForNavigation = (nodes: ListItemNode[]): string[] => {
   let ids: string[] = [];
   for (const node of nodes) {
     ids.push(node.id);
-    if (node.children.length > 0) {
+    if (node.children.length > 0 && !node.isCollapsed) {
       ids = ids.concat(flattenNodesForNavigation(node.children));
     }
   }
   return ids;
+};
+
+const collectCollapsedPaths = (nodes: ListItemNode[], basePath: number[] = []): number[][] => {
+  const paths: number[][] = [];
+
+  nodes.forEach((node, index) => {
+    const currentPath = [...basePath, index];
+    if (node.isCollapsed) {
+      paths.push(currentPath);
+    }
+
+    if (node.children.length > 0) {
+      paths.push(...collectCollapsedPaths(node.children, currentPath));
+    }
+  });
+
+  return paths;
+};
+
+const applyCollapsedState = (nodes: ListItemNode[], collapsedPaths: number[][]): ListItemNode[] => {
+  const collapsedSet = new Set(collapsedPaths.map(path => path.join('.')));
+
+  const traverse = (items: ListItemNode[], parentPath: number[] = []): ListItemNode[] =>
+    items.map((item, index) => {
+      const currentPath = [...parentPath, index];
+      const pathKey = currentPath.join('.');
+      const isCollapsed = collapsedSet.has(pathKey);
+
+      return {
+        ...item,
+        isCollapsed,
+        children: traverse(item.children, currentPath),
+      };
+    });
+
+  return traverse(nodes);
 };
 
 export default function App() {
@@ -59,6 +95,19 @@ export default function App() {
   const [fileToRename, setFileToRename] = useState<AppFile | null>(null);
 
   const isLoggedIn = useMemo(() => !!user, [user]);
+
+  const cloneDocContent = useCallback(() => {
+    return JSON.parse(JSON.stringify(docContent)) as ListItemNode[];
+  }, [docContent]);
+
+  const persistLocalViewState = useCallback((nodes: ListItemNode[]) => {
+    if (!user?.uid && currentFile) {
+      const viewState: DocumentViewState = {
+        collapsedPaths: collectCollapsedPaths(nodes),
+      };
+      void localService.updateDocumentViewState(currentFile.id, viewState);
+    }
+  }, [currentFile, user]);
 
   const listFiles = useCallback(async (targetUser: UserProfile | null = user) => {
     setIsLoading(true);
@@ -224,14 +273,20 @@ export default function App() {
     setIsLoading(true);
     try {
       let content: string | null;
+      let viewState: DocumentViewState | null = null;
       if (user?.uid) {
         content = await firebaseService.getDocumentContent(file.id);
       } else {
         content = await localService.getDocumentContent(file.id);
+        viewState = await localService.getDocumentViewState(file.id);
       }
-      
+
       if (content !== null) {
-        setDocContent(parseMarkdown(content));
+        const parsedNodes = parseMarkdown(content);
+        const nodesWithState = viewState
+          ? applyCollapsedState(parsedNodes, viewState.collapsedPaths)
+          : parsedNodes;
+        setDocContent(nodesWithState);
         setCurrentFile(file);
       } else {
         console.error("File not found or content is empty, creating from template.");
@@ -256,6 +311,9 @@ export default function App() {
         await firebaseService.updateDocument(currentFile.id, markdownContent);
       } else {
         await localService.updateDocument(currentFile.id, markdownContent);
+        await localService.updateDocumentViewState(currentFile.id, {
+          collapsedPaths: collectCollapsedPaths(docContent),
+        });
       }
     } catch (e) {
       console.error("Error saving file", e);
@@ -331,16 +389,16 @@ export default function App() {
   };
 
   const onUpdateText = (id: string, text: string) => {
-    const newDoc = JSON.parse(JSON.stringify(docContent));
+    const newDoc = cloneDocContent();
     findAndModifyNode(newDoc, id, (node) => {
       node.text = text;
     });
     setDocContent(newDoc);
   };
-  
+
   const onAddItem = (parentId: string | null) => {
-    const newNode: ListItemNode = { id: generateId(), text: '', children: [] };
-    const newDoc = JSON.parse(JSON.stringify(docContent));
+    const newNode: ListItemNode = { id: generateId(), text: '', isCollapsed: false, children: [] };
+    const newDoc = cloneDocContent();
 
     if (parentId === null) {
       newDoc.push(newNode);
@@ -349,16 +407,18 @@ export default function App() {
         if (node.children.length === 0) {
           siblings.splice(index + 1, 0, newNode);
         } else {
+          node.isCollapsed = false;
           node.children.unshift(newNode);
         }
       });
     }
     setDocContent(newDoc);
     setItemToFocusId(newNode.id);
+    persistLocalViewState(newDoc);
   };
 
   const onDeleteItem = (id: string) => {
-    const newDoc = JSON.parse(JSON.stringify(docContent));
+    const newDoc = cloneDocContent();
     findAndModifyNode(newDoc, id, (node, parent, siblings, index) => {
         siblings.splice(index, 1);
         node.children.reverse().forEach(child => {
@@ -366,23 +426,26 @@ export default function App() {
         });
     });
     setDocContent(newDoc);
+    persistLocalViewState(newDoc);
   };
-  
+
   const onIndent = (id: string) => {
-    const newDoc = JSON.parse(JSON.stringify(docContent));
+    const newDoc = cloneDocContent();
     findAndModifyNode(newDoc, id, (node, parent, siblings, index) => {
       if (index > 0) {
         const newParent = siblings[index - 1];
         const itemToMove = siblings.splice(index, 1)[0];
+        newParent.isCollapsed = false;
         newParent.children.push(itemToMove);
       }
     });
     setDocContent(newDoc);
     setItemToFocusId(id);
+    persistLocalViewState(newDoc);
   };
-  
+
   const onOutdent = (id: string) => {
-    const newDoc = JSON.parse(JSON.stringify(docContent));
+    const newDoc = cloneDocContent();
     findAndModifyNode(newDoc, id, (node, parent, siblings, index) => {
       if (parent) {
         findAndModifyNode(newDoc, parent.id, (greatGrandParent, grandParent, parentSiblings, parentIndex) => {
@@ -396,6 +459,16 @@ export default function App() {
     });
     setDocContent(newDoc);
     setItemToFocusId(id);
+    persistLocalViewState(newDoc);
+  };
+
+  const onToggleCollapse = (id: string) => {
+    const newDoc = cloneDocContent();
+    findAndModifyNode(newDoc, id, (node) => {
+      node.isCollapsed = !node.isCollapsed;
+    });
+    setDocContent(newDoc);
+    persistLocalViewState(newDoc);
   };
 
   const onFocusHandled = () => {
@@ -556,6 +629,7 @@ export default function App() {
               onIndent={onIndent}
               onOutdent={onOutdent}
               onNavigateFocus={onNavigateFocus}
+              onToggleCollapse={onToggleCollapse}
               itemToFocusId={itemToFocusId}
               onFocusHandled={onFocusHandled}
             />
