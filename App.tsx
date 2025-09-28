@@ -52,12 +52,12 @@ export default function App() {
 
   const isLoggedIn = useMemo(() => !!user, [user]);
 
-  const listFiles = useCallback(async () => {
+  const listFiles = useCallback(async (targetUser: UserProfile | null = user) => {
     setIsLoading(true);
     try {
       let userFiles: AppFile[] = [];
-      if (user?.uid) {
-        userFiles = await firebaseService.getDocumentsForUser(user.uid);
+      if (targetUser?.uid) {
+        userFiles = await firebaseService.getDocumentsForUser(targetUser.uid);
       } else {
         userFiles = await localService.getDocuments();
       }
@@ -80,22 +80,24 @@ export default function App() {
     const unsubscribe = firebaseService.onAuthChange((firebaseUser: User | null) => {
       setCurrentFile(null);
       setDocContent([]);
-      
+
       if (firebaseUser) {
-        setUser({
+        const nextUser: UserProfile = {
           uid: firebaseUser.uid,
           name: firebaseUser.displayName || 'Anonymous',
           email: firebaseUser.email || '',
           picture: firebaseUser.photoURL || '',
-        });
+        };
+        setUser(nextUser);
+        listFiles(nextUser);
       } else {
         setUser(null);
+        listFiles(null);
       }
-      // listFiles will be called by the useEffect below
     });
-    
+
     return () => unsubscribe();
-  }, []);
+  }, [listFiles]);
 
   useEffect(() => {
     listFiles();
