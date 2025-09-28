@@ -87,3 +87,11 @@ export const deleteDocument = (docId: string) => {
     const docRef = doc(db, 'documents', docId);
     return deleteDoc(docRef);
 };
+
+export const renameDocument = (docId: string, name: string) => {
+    const docRef = doc(db, 'documents', docId);
+    return updateDoc(docRef, {
+        name,
+        updatedAt: serverTimestamp(),
+    });
+};

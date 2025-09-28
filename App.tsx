@@ -4,7 +4,7 @@ import { ListItemNode, AppFile, UserProfile } from './types';
 import Editor from './components/Editor';
 import MarkdownDialog from './components/MarkdownDialog';
 import { parseMarkdown, serializeToMarkdown } from './services/markdownParser';
-import { FolderPlusIcon, SaveIcon, PlusIcon, XCircleIcon, ArrowDownTrayIcon, ArrowUpTrayIcon } from './components/icons';
+import { FolderPlusIcon, SaveIcon, PlusIcon, XCircleIcon, TrashIcon, ArrowDownTrayIcon, ArrowUpTrayIcon } from './components/icons';
 import { firebaseConfig } from './services/firebaseConfig';
 import * as firebaseService from './services/firebase';
 import * as localService from './services/localStorage';
@@ -55,6 +55,8 @@ export default function App() {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [importMarkdownText, setImportMarkdownText] = useState('');
   const [exportMarkdownText, setExportMarkdownText] = useState('');
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [fileToRename, setFileToRename] = useState<AppFile | null>(null);
 
   const isLoggedIn = useMemo(() => !!user, [user]);
 
@@ -262,6 +264,18 @@ export default function App() {
     }
   }, [currentFile, docContent, user]);
 
+  useEffect(() => {
+    if (!currentFile || user?.uid) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      saveFile();
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentFile, docContent, saveFile, user]);
+
   const deleteFile = async (file: AppFile) => {
     if (!window.confirm(`Are you sure you want to delete "${file.name}"? This action cannot be undone.`)) {
       return;
@@ -282,6 +296,37 @@ export default function App() {
       await listFiles();
     } catch (error) {
       console.error("Error deleting file:", error);
+    }
+  };
+
+  const handleRenameFile = async (newName: string) => {
+    const targetFile = fileToRename || currentFile;
+    if (!targetFile) {
+      return;
+    }
+
+    try {
+      if (user?.uid) {
+        await firebaseService.renameDocument(targetFile.id, newName);
+      } else {
+        await localService.renameDocument(targetFile.id, newName);
+      }
+
+      setFiles(prev => prev.map(file => file.id === targetFile.id ? { ...file, name: newName } : file));
+      if (currentFile?.id === targetFile.id) {
+        setCurrentFile({ ...currentFile, name: newName });
+      }
+      setStatusMessage(null);
+    } catch (error) {
+      console.error('Error renaming file:', error);
+      setStatusMessage({
+        type: 'error',
+        text: 'Unable to rename the document. Please try again.',
+      });
+    } finally {
+      setIsRenameDialogOpen(false);
+      setFileToRename(null);
+      await listFiles();
     }
   };
 
@@ -437,7 +482,29 @@ export default function App() {
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden mr-3 p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
             </button>
-            <h2 className="text-lg font-semibold truncate">{currentFile?.name || 'No file selected'}</h2>
+            {currentFile ? (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    setFileToRename(currentFile);
+                    setIsRenameDialogOpen(true);
+                  }}
+                  className="text-lg font-semibold truncate hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+                  title="Rename document"
+                >
+                  {currentFile.name}
+                </button>
+                <button
+                  onClick={() => deleteFile(currentFile)}
+                  className="p-1.5 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  title="Delete document"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <h2 className="text-lg font-semibold truncate">No file selected</h2>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -542,6 +609,18 @@ export default function App() {
         confirmText="Create"
         initialValue="New Document.md"
         placeholder="Enter file name"
+      />
+      <TextInputDialog
+        isOpen={isRenameDialogOpen}
+        onClose={() => {
+          setIsRenameDialogOpen(false);
+          setFileToRename(null);
+        }}
+        onConfirm={handleRenameFile}
+        title="Rename Document"
+        confirmText="Rename"
+        initialValue={fileToRename?.name || currentFile?.name || ''}
+        placeholder="Enter new file name"
       />
     </div>
   );

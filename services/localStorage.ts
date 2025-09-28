@@ -59,3 +59,11 @@ export const deleteDocument = async (docId: string): Promise<void> => {
   localStorage.removeItem(`${FILE_CONTENT_PREFIX}${docId}`);
   return Promise.resolve();
 };
+
+export const renameDocument = async (docId: string, name: string): Promise<void> => {
+  const index = getFileIndex().map(file =>
+    file.id === docId ? { ...file, name } : file
+  );
+  setFileIndex(index);
+  return Promise.resolve();
+};
