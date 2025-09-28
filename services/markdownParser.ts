@@ -81,13 +81,17 @@ const serializeNode = (node: ListItemNode, level: number): string => {
     return node.text;
   }
 
-  const prefix = '#'.repeat(level);
-  const childrenText = node.children
+  const headingLine = `${'#'.repeat(level)} ${node.text}`;
+  const childrenBlocks = node.children
     .map(child => serializeNode(child, level + 1))
-    .filter(text => text !== '')
-    .join('\n\n');
+    .filter(text => text !== '');
 
-  return `${prefix} ${node.text}${childrenText ? '\n\n' + childrenText : ''}`;
+  if (childrenBlocks.length === 0) {
+    return headingLine;
+  }
+
+  const childrenText = childrenBlocks.join('\n\n');
+  return `${headingLine}\n${childrenText}`;
 };
 
 export const serializeToMarkdown = (nodes: ListItemNode[]): string => {
