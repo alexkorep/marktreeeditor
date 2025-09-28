@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ListItemNode, AppFile, UserProfile } from './types';
 import Editor from './components/Editor';
+import MarkdownDialog from './components/MarkdownDialog';
 import { parseMarkdown, serializeToMarkdown } from './services/markdownParser';
-import { FolderPlusIcon, SaveIcon, PlusIcon, XCircleIcon, TrashIcon } from './components/icons';
+import { FolderPlusIcon, SaveIcon, PlusIcon, XCircleIcon, TrashIcon, ArrowDownTrayIcon, ArrowUpTrayIcon } from './components/icons';
 import { firebaseConfig } from './services/firebaseConfig';
 import * as firebaseService from './services/firebase';
 import * as localService from './services/localStorage';
@@ -50,6 +51,10 @@ export default function App() {
   const [isNewFileDialogOpen, setIsNewFileDialogOpen] = useState(false);
   const [itemToFocusId, setItemToFocusId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'info'; text: string } | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [importMarkdownText, setImportMarkdownText] = useState('');
+  const [exportMarkdownText, setExportMarkdownText] = useState('');
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [fileToRename, setFileToRename] = useState<AppFile | null>(null);
 
@@ -111,6 +116,10 @@ export default function App() {
     listFiles();
   }, [listFiles]);
 
+  useEffect(() => {
+    setExportMarkdownText(serializeToMarkdown(docContent));
+  }, [docContent]);
+  
   const handleLogin = async () => {
     try {
       await firebaseService.signInWithGoogle();
@@ -129,6 +138,59 @@ export default function App() {
   
   const openNewFileDialog = () => {
     setIsNewFileDialogOpen(true);
+  };
+
+  const openImportMarkdownDialog = () => {
+    setImportMarkdownText(serializeToMarkdown(docContent));
+    setIsImportDialogOpen(true);
+  };
+
+  const openExportMarkdownDialog = () => {
+    setExportMarkdownText(serializeToMarkdown(docContent));
+    setIsExportDialogOpen(true);
+  };
+
+  const handleImportMarkdown = (markdown: string) => {
+    const trimmed = markdown.trim();
+
+    if (!trimmed) {
+      setDocContent([]);
+      setStatusMessage({
+        type: 'info',
+        text: 'Document cleared from imported markdown. Remember to save your changes.',
+      });
+      setImportMarkdownText('');
+      setItemToFocusId(null);
+      return true;
+    }
+
+    const parsedNodes = parseMarkdown(markdown);
+
+    if (parsedNodes.length === 0) {
+      setStatusMessage({
+        type: 'error',
+        text: 'No headings (#) were found in the pasted markdown. Please ensure each heading starts with the # symbol.',
+      });
+      return false;
+    }
+
+    setDocContent(parsedNodes);
+    const serialized = serializeToMarkdown(parsedNodes);
+    setImportMarkdownText(serialized);
+    setExportMarkdownText(serialized);
+    setItemToFocusId(parsedNodes[0].id);
+    setStatusMessage({
+      type: 'info',
+      text: 'Markdown imported successfully. Remember to save your changes.',
+    });
+    return true;
+  };
+
+  const handleMarkdownCopySuccess = () => {
+    setStatusMessage({
+      type: 'info',
+      text: 'Markdown copied to clipboard.',
+    });
   };
 
   const handleCreateNewFile = async (fileName: string) => {
@@ -444,12 +506,31 @@ export default function App() {
               <h2 className="text-lg font-semibold truncate">No file selected</h2>
             )}
           </div>
-          {currentFile && (
-            <button onClick={saveFile} disabled={isSaving} className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed">
-              <SaveIcon className="w-5 h-5"/>
-              <span>{isSaving ? 'Saving...' : 'Save'}</span>
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={openImportMarkdownDialog}
+              className="flex items-center space-x-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700/40 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+            >
+              <ArrowDownTrayIcon className="h-5 w-5" />
+              <span className="hidden sm:inline">Import</span>
             </button>
-          )}
+            <button
+              type="button"
+              onClick={openExportMarkdownDialog}
+              disabled={docContent.length === 0}
+              className={`flex items-center space-x-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-medium transition-colors ${docContent.length === 0 ? 'cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-700/30 dark:text-slate-500' : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-700/40 dark:text-slate-200 dark:hover:bg-slate-700'}`}
+            >
+              <ArrowUpTrayIcon className="h-5 w-5" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+            {currentFile && (
+              <button onClick={saveFile} disabled={isSaving} className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                <SaveIcon className="w-5 h-5"/>
+                <span>{isSaving ? 'Saving...' : 'Save'}</span>
+              </button>
+            )}
+          </div>
         </header>
 
         {statusMessage && (
@@ -496,6 +577,29 @@ export default function App() {
           )}
         </div>
       </main>
+
+      <MarkdownDialog
+        isOpen={isImportDialogOpen}
+        title="Import markdown"
+        description="Paste markdown headings to replace the current document outline. Existing content will be overwritten when you import."
+        confirmText="Import"
+        initialValue={importMarkdownText}
+        placeholder="# Heading"
+        onClose={() => setIsImportDialogOpen(false)}
+        onConfirm={handleImportMarkdown}
+      />
+
+      <MarkdownDialog
+        isOpen={isExportDialogOpen}
+        title="Export markdown"
+        description="Copy the markdown representation of the current document."
+        initialValue={exportMarkdownText}
+        readOnly
+        cancelText={null}
+        onClose={() => setIsExportDialogOpen(false)}
+        showCopyButton={docContent.length > 0}
+        onCopySuccess={handleMarkdownCopySuccess}
+      />
 
       <TextInputDialog
         isOpen={isNewFileDialogOpen}

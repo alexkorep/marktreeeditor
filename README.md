@@ -18,6 +18,11 @@ View your app in AI Studio: https://ai.studio/apps/drive/15mormDQ9ERK0BnLer052AP
 4. Run the app:
    `npm run dev`
 
+## Markdown import/export
+
+Use the **Import** button in the editor toolbar to paste markdown that will replace the current outline. The **Export** button
+opens a dialog where you can copy the generated markdown for the document.
+
 ## Deploy to GitHub Pages
 
 The repository includes a GitHub Actions workflow that publishes the production build to GitHub Pages whenever commits land on the `main` branch.
