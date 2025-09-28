@@ -110,7 +110,7 @@ export default function App() {
   useEffect(() => {
     listFiles();
   }, [listFiles]);
-  
+
   const handleLogin = async () => {
     try {
       await firebaseService.signInWithGoogle();
@@ -201,6 +201,18 @@ export default function App() {
       setTimeout(() => setIsSaving(false), 1000);
     }
   }, [currentFile, docContent, user]);
+
+  useEffect(() => {
+    if (!currentFile || user?.uid) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      saveFile();
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentFile, docContent, saveFile, user]);
 
   const deleteFile = async (file: AppFile) => {
     if (!window.confirm(`Are you sure you want to delete "${file.name}"? This action cannot be undone.`)) {
