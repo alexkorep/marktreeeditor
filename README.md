@@ -12,7 +12,10 @@ View your app in AI Studio: https://ai.studio/apps/drive/15mormDQ9ERK0BnLer052AP
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+3. Configure Firebase:
+   - Update [`services/firebaseConfig.ts`](services/firebaseConfig.ts) with your project's credentials.
+   - In the Firebase console, enable **Cloud Firestore** for your project and ensure your security rules allow the authenticated user to read and write the `documents` collection. Firestore will create the collection automatically the first time a document is saved, so no manual table setup is required.
+4. Run the app:
    `npm run dev`
 
 ## Deploy to GitHub Pages
