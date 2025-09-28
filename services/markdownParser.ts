@@ -20,6 +20,7 @@ export const parseMarkdown = (markdown: string): ListItemNode[] => {
     const newNode: ListItemNode = {
       id: generateId(),
       text,
+      isCollapsed: false,
       children: [],
     };
 

@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { ListItemNode } from '../types';
-import { TrashIcon, ArrowRightIcon, ArrowLeftIcon } from './icons';
+import { TrashIcon, ArrowRightIcon, ArrowLeftIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
 
 interface EditorItemProps {
   node: ListItemNode;
@@ -12,6 +12,7 @@ interface EditorItemProps {
   onIndent: (id: string) => void;
   onOutdent: (id: string) => void;
   onNavigateFocus: (id: string, direction: 'up' | 'down') => void;
+  onToggleCollapse: (id: string) => void;
   isFirst: boolean;
   isLast: boolean;
   parentIsRoot: boolean;
@@ -28,6 +29,7 @@ const EditorItem: React.FC<EditorItemProps> = ({
   onIndent,
   onOutdent,
   onNavigateFocus,
+  onToggleCollapse,
   isFirst,
   isLast,
   parentIsRoot,
@@ -35,6 +37,7 @@ const EditorItem: React.FC<EditorItemProps> = ({
   onFocusHandled,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasChildren = node.children.length > 0;
 
   useEffect(() => {
     if (itemToFocusId === node.id && inputRef.current) {
@@ -67,6 +70,22 @@ const EditorItem: React.FC<EditorItemProps> = ({
   return (
     <div className="flex flex-col">
       <div className="flex items-center group space-x-2 py-1">
+        {hasChildren ? (
+          <button
+            onClick={() => onToggleCollapse(node.id)}
+            title={node.isCollapsed ? 'Expand children' : 'Collapse children'}
+            className="flex-shrink-0 p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500"
+            aria-label={node.isCollapsed ? 'Expand children' : 'Collapse children'}
+          >
+            {node.isCollapsed ? (
+              <ChevronRightIcon className="w-4 h-4" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4" />
+            )}
+          </button>
+        ) : (
+          <span className="w-6" />
+        )}
         <input
           ref={inputRef}
           type="text"
@@ -88,27 +107,30 @@ const EditorItem: React.FC<EditorItemProps> = ({
             </button>
         </div>
       </div>
-      <div style={{ paddingLeft: `1.5rem` }} className="relative">
-        {node.children.length > 0 && <div className="absolute left-0 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700 ml-3"></div>}
-        {node.children.map((childNode, index) => (
-          <EditorItem
-            key={childNode.id}
-            node={childNode}
-            level={level + 1}
-            onUpdateText={onUpdateText}
-            onAddItem={onAddItem}
-            onDeleteItem={onDeleteItem}
-            onIndent={onIndent}
-            onOutdent={onOutdent}
-            onNavigateFocus={onNavigateFocus}
-            isFirst={index === 0}
-            isLast={index === node.children.length - 1}
-            parentIsRoot={false}
-            itemToFocusId={itemToFocusId}
-            onFocusHandled={onFocusHandled}
-          />
-        ))}
-      </div>
+      {hasChildren && !node.isCollapsed && (
+        <div style={{ paddingLeft: `1.5rem` }} className="relative">
+          <div className="absolute left-0 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700 ml-3"></div>
+          {node.children.map((childNode, index) => (
+            <EditorItem
+              key={childNode.id}
+              node={childNode}
+              level={level + 1}
+              onUpdateText={onUpdateText}
+              onAddItem={onAddItem}
+              onDeleteItem={onDeleteItem}
+              onIndent={onIndent}
+              onOutdent={onOutdent}
+              onNavigateFocus={onNavigateFocus}
+              onToggleCollapse={onToggleCollapse}
+              isFirst={index === 0}
+              isLast={index === node.children.length - 1}
+              parentIsRoot={false}
+              itemToFocusId={itemToFocusId}
+              onFocusHandled={onFocusHandled}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
