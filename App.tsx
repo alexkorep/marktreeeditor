@@ -130,7 +130,7 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (firebaseConfig.apiKey === "YOUR_API_KEY" || !firebaseConfig.apiKey) {
