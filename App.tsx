@@ -49,6 +49,7 @@ export default function App() {
   const [configError, setConfigError] = useState<string | null>(null);
   const [isNewFileDialogOpen, setIsNewFileDialogOpen] = useState(false);
   const [itemToFocusId, setItemToFocusId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'info'; text: string } | null>(null);
 
   const isLoggedIn = useMemo(() => !!user, [user]);
 
@@ -62,9 +63,14 @@ export default function App() {
         userFiles = await localService.getDocuments();
       }
       setFiles(userFiles);
+      setStatusMessage(null);
     } catch (error) {
       console.error("Error listing files:", error);
       setFiles([]);
+      setStatusMessage({
+        type: 'error',
+        text: 'Unable to load your documents. Please verify your Firebase configuration or try again later.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -137,8 +143,14 @@ export default function App() {
       }
       await listFiles();
       openFile({ id: newFileId, name: fileName });
+      setStatusMessage(null);
     } catch (e) {
       console.error("Error creating file", e);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      setStatusMessage({
+        type: 'error',
+        text: `Failed to create the document. Ensure Cloud Firestore is enabled and that the authenticated user has write access. (${errorMessage})`,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -373,10 +385,23 @@ export default function App() {
           )}
         </header>
 
+        {statusMessage && (
+          <div
+            className={`mx-3 md:mx-4 mt-3 rounded-md border px-4 py-3 text-sm font-medium ${
+              statusMessage.type === 'error'
+                ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-700/60 dark:bg-red-900/40 dark:text-red-200'
+                : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200'
+            }`}
+            role={statusMessage.type === 'error' ? 'alert' : 'status'}
+          >
+            {statusMessage.text}
+          </div>
+        )}
+
         <div className="flex-grow overflow-hidden bg-white dark:bg-slate-800/50">
           {currentFile ? (
-            <Editor 
-              nodes={docContent} 
+            <Editor
+              nodes={docContent}
               onUpdateText={onUpdateText} 
               onAddItem={onAddItem}
               onDeleteItem={onDeleteItem}
