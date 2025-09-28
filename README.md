@@ -18,6 +18,10 @@ View your app in AI Studio: https://ai.studio/apps/drive/15mormDQ9ERK0BnLer052AP
 4. Run the app:
    `npm run dev`
 
+### Progressive Web App
+
+The editor is installable as a Progressive Web App. When you open the site in a supported browser, use the browser's **Install** or **Add to home screen** option to pin it like a native app. Core assets and documents you have opened are cached locally so the interface remains available while offline, and new changes are synchronized automatically once the network returns.
+
 ## Markdown import/export
 
 Use the **Import** button in the editor toolbar to paste markdown that will replace the current outline. The **Export** button

@@ -1,0 +1,23 @@
+{
+  "name": "Marktree Editor",
+  "short_name": "Marktree",
+  "description": "Create and manage hierarchical markdown documents, online and offline.",
+  "start_url": ".",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icons/marktree-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/marktree-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

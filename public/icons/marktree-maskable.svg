@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="maskable-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0f172a" />
+  <g fill="none" stroke="url(#maskable-grad)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M144 144h224" />
+    <path d="M144 256h176" />
+    <path d="M144 368h128" />
+    <circle cx="104" cy="144" r="24" fill="url(#maskable-grad)" stroke="none" />
+    <circle cx="104" cy="256" r="24" fill="url(#maskable-grad)" stroke="none" />
+    <circle cx="104" cy="368" r="24" fill="url(#maskable-grad)" stroke="none" />
+  </g>
+</svg>
