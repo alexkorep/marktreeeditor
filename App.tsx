@@ -563,19 +563,19 @@ export default function App() {
       </aside>
 
       <main className="flex-1 flex flex-col h-screen">
-        <header className="flex-shrink-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center p-3 md:p-4">
-          <div className="flex items-center">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden mr-3 p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">
+        <header className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 bg-white px-3 py-3 dark:bg-slate-800 md:px-4 md:py-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex min-w-0 flex-[1_1_300px] items-center gap-3">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
             </button>
             {currentFile ? (
-              <div className="flex items-center space-x-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <button
                   onClick={() => {
                     setFileToRename(currentFile);
                     setIsRenameDialogOpen(true);
                   }}
-                  className="text-lg font-semibold truncate hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+                  className="min-w-0 max-w-full truncate text-left text-lg font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
                   title="Rename document"
                 >
                   {currentFile.name}
@@ -589,14 +589,14 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <h2 className="text-lg font-semibold truncate">No file selected</h2>
+              <h2 className="min-w-0 truncate text-lg font-semibold">No file selected</h2>
             )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={openImportMarkdownDialog}
-              className="flex items-center space-x-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700/40 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700/40 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
               <ArrowDownTrayIcon className="h-5 w-5" />
               <span className="hidden sm:inline">Import</span>
@@ -605,13 +605,13 @@ export default function App() {
               type="button"
               onClick={openExportMarkdownDialog}
               disabled={docContent.length === 0}
-              className={`flex items-center space-x-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-medium transition-colors ${docContent.length === 0 ? 'cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-700/30 dark:text-slate-500' : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-700/40 dark:text-slate-200 dark:hover:bg-slate-700'}`}
+              className={`flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-medium transition-colors ${docContent.length === 0 ? 'cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-700/30 dark:text-slate-500' : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-700/40 dark:text-slate-200 dark:hover:bg-slate-700'}`}
             >
               <ArrowUpTrayIcon className="h-5 w-5" />
               <span className="hidden sm:inline">Export</span>
             </button>
             {currentFile && (
-              <button onClick={saveFile} disabled={isSaving} className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed">
+              <button onClick={saveFile} disabled={isSaving} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed">
                 <SaveIcon className="w-5 h-5"/>
                 <span>{isSaving ? 'Saving...' : 'Save'}</span>
               </button>
