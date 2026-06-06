@@ -24,7 +24,7 @@ const TextInputDialog: React.FC<TextInputDialogProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setValue(initialValue || 'New Document.md');
+      setValue(initialValue);
       // Auto-focus the input when the dialog opens
       setTimeout(() => inputRef.current?.focus(), 100);
     }

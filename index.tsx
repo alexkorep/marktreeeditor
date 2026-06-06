@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './styles.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -18,7 +19,7 @@ root.render(
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   const register = () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register(`${import.meta.env.BASE_URL}sw.js`)
       .catch((error) => {
         console.error('Service worker registration failed:', error);
       });

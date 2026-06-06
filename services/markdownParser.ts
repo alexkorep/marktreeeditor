@@ -20,6 +20,7 @@ export const parseMarkdown = (markdown: string): ListItemNode[] => {
     const newNode: ListItemNode = {
       id: generateId(),
       text,
+      kind: 'paragraph',
       isCollapsed: false,
       children: [],
     };
@@ -49,6 +50,7 @@ export const parseMarkdown = (markdown: string): ListItemNode[] => {
       const newNode: ListItemNode = {
         id: generateId(),
         text,
+        kind: 'heading',
         isCollapsed: false,
         children: [],
       };
@@ -77,8 +79,16 @@ export const parseMarkdown = (markdown: string): ListItemNode[] => {
 };
 
 const serializeNode = (node: ListItemNode, level: number): string => {
-  if (node.children.length === 0) {
-    return node.text;
+  if (node.kind === 'paragraph') {
+    const childrenBlocks = node.children
+      .map(child => serializeNode(child, level + 1))
+      .filter(text => text !== '');
+
+    if (childrenBlocks.length === 0) {
+      return node.text;
+    }
+
+    return `${node.text}\n\n${childrenBlocks.join('\n\n')}`;
   }
 
   const headingLine = `${'#'.repeat(level)} ${node.text}`;

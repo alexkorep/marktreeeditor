@@ -1,10 +1,12 @@
 const CACHE_NAME = 'marktree-editor-cache-v1';
+const BASE_URL = new URL(self.registration.scope).pathname;
+const cacheURL = (path) => `${BASE_URL}${path}`.replace(/\/{2,}/g, '/');
 const PRE_CACHE_URLS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icons/marktree-icon.svg',
-  '/icons/marktree-maskable.svg'
+  cacheURL(''),
+  cacheURL('index.html'),
+  cacheURL('manifest.webmanifest'),
+  cacheURL('icons/marktree-icon.svg'),
+  cacheURL('icons/marktree-maskable.svg')
 ];
 
 self.addEventListener('install', (event) => {
@@ -67,7 +69,7 @@ self.addEventListener('fetch', (event) => {
         }
 
         if (request.mode === 'navigate') {
-          const fallback = await cache.match('/index.html');
+          const fallback = await cache.match(cacheURL('index.html'));
           if (fallback) {
             return fallback;
           }

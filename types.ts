@@ -1,6 +1,7 @@
 export interface ListItemNode {
   id: string;
   text: string;
+  kind: 'heading' | 'paragraph';
   isCollapsed: boolean;
   children: ListItemNode[];
 }

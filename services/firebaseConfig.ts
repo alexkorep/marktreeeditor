@@ -1,6 +1,6 @@
 // IMPORTANT: Replace these placeholder values with your actual Firebase project configuration.
-// For security reasons, this file should NOT be committed to version control. 
-// Add it to your .gitignore file.
+// Firebase web config is public client configuration. Firestore Security Rules must
+// enforce ownership, for example request.auth.uid == resource.data.ownerId.
 
 export const firebaseConfig = {
     apiKey: "AIzaSyAxKc13OxOGFvLBNRi3Pjz6UQXq_QF9Veg",

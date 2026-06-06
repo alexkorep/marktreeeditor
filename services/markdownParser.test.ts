@@ -23,12 +23,15 @@ describe('parseMarkdown', () => {
     const [firstHeading, secondHeading] = result;
 
     expect(firstHeading.text).toBe('Heading 1');
+    expect(firstHeading.kind).toBe('heading');
     expect(firstHeading.isCollapsed).toBe(false);
     expect(firstHeading.children).toHaveLength(2);
     expect(firstHeading.children[0]?.text).toBe('Paragraph under heading 1');
+    expect(firstHeading.children[0]?.kind).toBe('paragraph');
 
     const nestedHeading = firstHeading.children[1];
     expect(nestedHeading?.text).toBe('Heading 1.1');
+    expect(nestedHeading?.kind).toBe('heading');
     expect(nestedHeading?.children).toHaveLength(1);
     expect(nestedHeading?.children[0]?.text).toBe('Nested paragraph');
 
@@ -51,6 +54,7 @@ describe('parseMarkdown', () => {
       'First paragraph',
       'Second paragraph',
     ]);
+    expect(result.every(node => node.kind === 'paragraph')).toBe(true);
   });
 });
 
@@ -60,22 +64,26 @@ describe('serializeToMarkdown', () => {
       {
         id: '1',
         text: 'Heading 1',
+        kind: 'heading',
         isCollapsed: false,
         children: [
           {
             id: '1-1',
             text: 'Paragraph under heading 1',
+            kind: 'paragraph',
             isCollapsed: false,
             children: [],
           },
           {
             id: '1-2',
             text: 'Heading 1.1',
+            kind: 'heading',
             isCollapsed: false,
             children: [
               {
                 id: '1-2-1',
                 text: 'Nested paragraph',
+                kind: 'paragraph',
                 isCollapsed: false,
                 children: [],
               },
@@ -86,6 +94,7 @@ describe('serializeToMarkdown', () => {
       {
         id: '2',
         text: 'Standalone paragraph',
+        kind: 'paragraph',
         isCollapsed: false,
         children: [],
       },
@@ -102,5 +111,11 @@ describe('serializeToMarkdown', () => {
         'Standalone paragraph',
       ].join('\n'),
     );
+  });
+
+  it('preserves leaf headings when serializing', () => {
+    const nodes = parseMarkdown('# Title\n## Child');
+
+    expect(serializeToMarkdown(nodes)).toBe('# Title\n## Child');
   });
 });

@@ -15,7 +15,7 @@ const findAndModifyNode = <T, >(nodes: ListItemNode[], targetId: string, callbac
   const stack: { node: ListItemNode, parent: ListItemNode | null, siblings: ListItemNode[], index: number }[] = nodes.map((node, index) => ({ node, parent: null, siblings: nodes, index }));
   
   while (stack.length > 0) {
-    const { node, parent, siblings, index } = stack.shift()!;
+    const { node, parent, siblings, index } = stack.pop()!;
     if (node.id === targetId) {
       return callback(node, parent, siblings, index);
     }
@@ -109,7 +109,7 @@ export default function App() {
     }
   }, [currentFile, user]);
 
-  const listFiles = useCallback(async (targetUser: UserProfile | null = user) => {
+  const listFiles = useCallback(async (targetUser: UserProfile | null) => {
     setIsLoading(true);
     try {
       let userFiles: AppFile[] = [];
@@ -151,18 +151,14 @@ export default function App() {
           picture: firebaseUser.photoURL || '',
         };
         setUser(nextUser);
-        listFiles(nextUser);
+        void listFiles(nextUser);
       } else {
         setUser(null);
-        listFiles(null);
+        void listFiles(null);
       }
     });
 
     return () => unsubscribe();
-  }, [listFiles]);
-
-  useEffect(() => {
-    listFiles();
   }, [listFiles]);
 
   useEffect(() => {
@@ -179,6 +175,7 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
+      await saveFile();
       await firebaseService.signOutUser();
     } catch (error) {
       console.error("Logout failed", error);
@@ -218,7 +215,7 @@ export default function App() {
     if (parsedNodes.length === 0) {
       setStatusMessage({
         type: 'error',
-        text: 'No headings (#) were found in the pasted markdown. Please ensure each heading starts with the # symbol.',
+        text: 'No importable markdown content was found. Paste headings or paragraph text and try again.',
       });
       return false;
     }
@@ -254,8 +251,8 @@ export default function App() {
       } else {
         newFileId = await localService.createDocument(fileName, initialContent);
       }
-      await listFiles();
-      openFile({ id: newFileId, name: fileName });
+      await listFiles(user);
+      await openFile({ id: newFileId, name: fileName });
       setStatusMessage(null);
     } catch (e) {
       console.error("Error creating file", e);
@@ -272,6 +269,10 @@ export default function App() {
   const openFile = async (file: AppFile) => {
     setIsLoading(true);
     try {
+      if (currentFile && currentFile.id !== file.id) {
+        await saveFile();
+      }
+
       let content: string | null;
       let viewState: DocumentViewState | null = null;
       if (user?.uid) {
@@ -363,7 +364,7 @@ export default function App() {
         setDocContent([]);
       }
       
-      await listFiles();
+      await listFiles(user);
     } catch (error) {
       console.error("Error deleting file:", error);
     }
@@ -396,7 +397,7 @@ export default function App() {
     } finally {
       setIsRenameDialogOpen(false);
       setFileToRename(null);
-      await listFiles();
+      await listFiles(user);
     }
   };
 
@@ -409,7 +410,7 @@ export default function App() {
   };
 
   const onAddItem = (parentId: string | null) => {
-    const newNode: ListItemNode = { id: generateId(), text: '', isCollapsed: false, children: [] };
+    const newNode: ListItemNode = { id: generateId(), text: '', kind: 'heading', isCollapsed: false, children: [] };
     const newDoc = cloneDocContent();
 
     if (parentId === null) {

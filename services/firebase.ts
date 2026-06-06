@@ -45,13 +45,23 @@ export const onAuthChange = (callback: (user: User | null) => void) => {
 
 const documentsCollection = collection(db, 'documents');
 
+const getTimestampMillis = (value: unknown): number => {
+  if (value && typeof value === 'object' && 'toMillis' in value && typeof value.toMillis === 'function') {
+    return value.toMillis();
+  }
+
+  return 0;
+};
+
 export const getDocumentsForUser = async (userId: string): Promise<AppFile[]> => {
   const q = query(documentsCollection, where('ownerId', '==', userId));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    name: doc.data().name,
-  }));
+  return querySnapshot.docs
+    .sort((a, b) => getTimestampMillis(b.data().updatedAt) - getTimestampMillis(a.data().updatedAt))
+    .map(doc => ({
+      id: doc.id,
+      name: doc.data().name,
+    }));
 };
 
 export const getDocumentContent = async (docId: string): Promise<string | null> => {
